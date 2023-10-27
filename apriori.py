@@ -80,3 +80,55 @@ for i in range(len(antecedents)):
 ax.set_title("Lift metric for frequent itemsets")
 fig.tight_layout()
 plt.show()
+
+
+#Gerando recomendações atraves de recursos de filtragem da biblioteca pandas
+
+butter_antecedent = rules[rules['antecedents'] == {'butter'}][['consequents', 'confidence']].sort_values('confidence', ascending = False)
+#Utilizaremos uma list comprehension para extrair os tres principais consequentes:
+butter_consequents = [list(item) for item in butter_antecedent.iloc[0:3:,]['consequents']]
+#Gerar uma recomendação
+item = 'butter'
+print('Items frequently bought together with' , item, 'are: ', butter_consequents)
+
+#Planejando descontos com base nas regras da associação
+#Primeiro precisamos criar um conjunto de conjuntos de itens frequentes, para isso criamos uma coluna itemsets fazendo um merge das colunas antecedents e consequents
+
+from functools import reduce
+rules['itemsets'] = rules[['antecedents', 'consequents']].apply(lambda x: reduce(frozenset.union, x), axis=1)
+
+#Usamos a função reduce() do modulo functools para aplicar o metodo frozeset.union() aos valores das colunas
+
+print(rules[['antecedents', 'consequents', 'itemsets']])
+
+#Removendo conjunto de itens duplicados com o metodo drop_duplicates()
+
+rules.drop_duplicates(subset=['itemsets'], keep='first', inplace=True)
+print(rules['itemsets'])
+
+#Depois escolhemos um item de cada conjunto de itens para receber descontos:
+
+discounted = []
+others = []
+for itemset in rules['itemsets']:
+  for i, item in enumerate(itemset):
+    if item not in others:
+      discounted.append(item)
+      itemset = set(itemset)
+      itemset.discard(item)
+      others.extend(itemset)
+      break
+    if i == len(itemset)-1:
+      discounted.append(item)
+      itemset = set(itemset)
+      itemset.discard(item)
+      others.extend(itemset)
+print(discounted)
+
+# Removendo duplicadas
+
+print(list(set(discounted)))
+
+
+
+
